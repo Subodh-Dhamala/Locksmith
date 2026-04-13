@@ -36,7 +36,7 @@ model User {
 
 model RefreshToken {
   id        String   @id @default(cuid())
-  token     String   @unique
+  tokenHash String   @unique
   userId    String
   createdAt DateTime @default(now())
 
