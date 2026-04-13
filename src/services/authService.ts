@@ -6,6 +6,7 @@ import logger from '../lib/logger';
 import { sendVerificationEmail } from '../lib/mailer';
 import { issueTokens, deleteRefreshToken } from './tokenService';
 import { RegisterInput, LoginInput } from '../lib/validators';
+import { sendPasswordResetEmail } from '../lib/mailer';
 
 
 //register
@@ -148,4 +149,64 @@ export async function login(input: LoginInput): Promise<{
 export async function logout(refreshToken: string): Promise<void> {
   await deleteRefreshToken(refreshToken);
   logger.info('User logged out');
+}
+
+//forgot pwd
+export async function forgotPassword(email: string): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  // Don't reveal if email exists or not
+  if (!user) {
+    logger.info({ email }, 'Password reset requested for non-existent email');
+    return;
+  }
+
+  // Delete any existing reset tokens
+  await prisma.resetToken.deleteMany({ where: { userId: user.id } });
+
+  // Generate reset token
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await prisma.resetToken.create({
+    data: { token, userId: user.id, expiresAt },
+  });
+
+  await sendPasswordResetEmail(email, token);
+
+  logger.info({ email }, 'Password reset email sent');
+}
+
+//reset pwd
+export async function resetPassword(
+  token: string,
+  newPassword: string
+): Promise<void> {
+  const resetToken = await prisma.resetToken.findUnique({
+    where: { token },
+  });
+
+  if (!resetToken || resetToken.used) {
+    throw new AppError('Invalid or expired reset token', 400);
+  }
+
+  if (resetToken.expiresAt < new Date()) {
+    throw new AppError('Reset token expired', 400);
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: resetToken.userId },
+      data: { passwordHash },
+    });
+
+    await tx.resetToken.update({
+      where: { token },
+      data: { used: true },
+    });
+  });
+
+  logger.info({ userId: resetToken.userId }, 'Password reset successful');
 }
