@@ -10,6 +10,9 @@ import userRoutes from './routes/userRoutes';
 import { errorMiddleware } from './middlewares/errorMiddleware';
 import { authMiddleware } from './middlewares/authMiddleware';
 
+import adminRoutes from './routes/adminRoutes';
+import moderatorRoutes from './routes/moderatorRoutes';
+
 function validateEnv(): void {
   const required: string[] = ['DATABASE_URL', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
   for (const key of required) {
@@ -29,6 +32,9 @@ app.use('/auth/password',passwordRoutes);
 app.use('/user',userRoutes);
 
 app.use('/user', authMiddleware, userRoutes);
+
+app.use('/admin', adminRoutes);
+app.use('/moderator', moderatorRoutes);
 
 app.get("/", (req, res) => {
   res.send("PaleyDai is Active!");
