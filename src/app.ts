@@ -3,6 +3,10 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 dotenv.config();
 
+import authRoutes from './routes/authRoutes';
+import passwordRoutes from './routes/passwordRoutes';
+import userRoutes from './routes/userRoutes';
+
 function validateEnv(): void {
   const required: string[] = ['DATABASE_URL', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
   for (const key of required) {
@@ -15,6 +19,11 @@ validateEnv();
 const app: Application = express();
 app.use(express.json());
 app.use(cookieParser());
+
+//routes
+app.use('/auth',authRoutes);
+app.use('/auth',passwordRoutes);
+app.use('/user',userRoutes);
 
 app.get('/health', (_req: Request, res: Response): void => {
   res.json({ status: 'ok' });
