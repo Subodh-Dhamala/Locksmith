@@ -4,7 +4,6 @@ import {
   updateMeController,
   changePasswordController,
 } from '../controller/userController';
-
 const router = Router();
 
 router.get('/me', getMeController);

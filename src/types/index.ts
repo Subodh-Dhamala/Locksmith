@@ -1,15 +1,30 @@
-import { User } from '@prisma/client';
+//User type
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  isVerified: boolean;
+  oauthProvider: string | null;
+  oauthId: string | null;
+  failedLoginAttempts: number;
+  lockedUntil: Date | null;
+  twoFactorSecret: string | null;
+  twoFactorEnabled: boolean;
+  createdAt: Date;
+  passwordHash: string | null;
+}
 
 //extend express request
 declare global {
   namespace Express {
     interface Request {
-      user?: User;
+      user?: AuthUser;
     }
   }
 }
 
-//jwt payload
+//JWT payload
 export interface TokenPayload {
   userId: string;
   email: string;
@@ -18,8 +33,7 @@ export interface TokenPayload {
   exp?: number;
 }
 
-
-//strict auth request(use in protected routes)
+// strict auth request
 export interface AuthRequest extends Express.Request {
-  user: User;
+  user: AuthUser;
 }

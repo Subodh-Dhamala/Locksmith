@@ -7,6 +7,9 @@ import authRoutes from './routes/authRoutes';
 import passwordRoutes from './routes/passwordRoutes';
 import userRoutes from './routes/userRoutes';
 
+import { errorMiddleware } from './middlewares/errorMiddleware';
+import { authMiddleware } from './middlewares/authMiddleware';
+
 function validateEnv(): void {
   const required: string[] = ['DATABASE_URL', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
   for (const key of required) {
@@ -22,12 +25,16 @@ app.use(cookieParser());
 
 //routes
 app.use('/auth',authRoutes);
-app.use('/auth',passwordRoutes);
+app.use('/auth/password',passwordRoutes);
 app.use('/user',userRoutes);
+
+app.use('/user', authMiddleware, userRoutes);
 
 app.get('/health', (_req: Request, res: Response): void => {
   res.json({ status: 'ok' });
 });
+
+app.use(errorMiddleware);
 
 const PORT = process.env.PORT ?? 3000;
 
