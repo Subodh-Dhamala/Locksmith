@@ -5,10 +5,12 @@ import {
   refreshTokenController,
 } from '../controller/passwordController';
 
+import {strictLimiter,looseLimiter} from '../middlewares/rateLimiter';
+
 const router = Router();
 
-router.post('/forgot-password', forgotPasswordController);
-router.post('/reset-password/:token', resetPasswordController);
-router.post('/refresh', refreshTokenController);
+router.post('/forgot-password', strictLimiter, forgotPasswordController);
+router.post('/reset-password/:token', looseLimiter, resetPasswordController);
+router.post('/refresh', looseLimiter, refreshTokenController);
 
 export default router;
