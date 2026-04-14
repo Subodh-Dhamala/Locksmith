@@ -13,16 +13,7 @@ export async function registerController(
     const result = registerSchema.safeParse(req.body);
 
     if (!result.success) {
-      const formatted = result.error.format();
-
-      const fieldErrors = Object.fromEntries(
-        Object.entries(formatted).map(([key, value]) => [
-          key,
-          value?._errors || []
-        ])
-      );
-
-      res.status(400).json({ errors: fieldErrors });
+      res.status(400).json({ errors: result.error.flatten().fieldErrors });
       return;
     }
 
@@ -36,14 +27,14 @@ export async function registerController(
   }
 }
 
-//verify email
+//verify mail
 export async function verifyEmailController(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const token  = req.params.token as string;
+    const token = req.params.token as string;
 
     if (!token) {
       throw new AppError('Token is required', 400);
@@ -67,16 +58,7 @@ export async function loginController(
     const result = loginSchema.safeParse(req.body);
 
     if (!result.success) {
-      const formatted = result.error.format();
-
-      const fieldErrors = Object.fromEntries(
-        Object.entries(formatted).map(([key, value]) => [
-          key,
-          value?._errors || []
-        ])
-      );
-
-      res.status(400).json({ errors: fieldErrors });
+      res.status(400).json({ errors: result.error.flatten().fieldErrors });
       return;
     }
 
@@ -87,12 +69,11 @@ export async function loginController(
       return;
     }
 
-    //set refresh token as httpOnly cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({ accessToken });
@@ -116,7 +97,6 @@ export async function logoutController(
 
     await logout(refreshToken);
 
-    //clear the cookie
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

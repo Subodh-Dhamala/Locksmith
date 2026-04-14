@@ -4,6 +4,7 @@ import { isBlacklisted } from '../lib/blacklist';
 import prisma from '../lib/prisma';
 import AppError from '../lib/AppError';
 import logger from '../lib/logger';
+import { AuthUser } from '../types/index';
 
 export async function authMiddleware(
   req: Request,
@@ -41,7 +42,7 @@ export async function authMiddleware(
     }
 
     //attach user to request
-    req.user = user;
+    req.user = user as unknown as AuthUser;
 
     logger.debug({ userId: user.id }, 'Auth middleware passed');
 

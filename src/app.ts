@@ -30,6 +30,10 @@ app.use('/user',userRoutes);
 
 app.use('/user', authMiddleware, userRoutes);
 
+app.get("/", (req, res) => {
+  res.send("PaleyDai is Active!");
+});
+
 app.get('/health', (_req: Request, res: Response): void => {
   res.json({ status: 'ok' });
 });
