@@ -13,7 +13,16 @@ export async function registerController(
     const result = registerSchema.safeParse(req.body);
 
     if (!result.success) {
-      res.status(400).json({ errors: result.error.flatten().fieldErrors });
+      const formatted = result.error.format();
+
+      const fieldErrors = Object.fromEntries(
+        Object.entries(formatted).map(([key, value]) => [
+          key,
+          value?._errors || []
+        ])
+      );
+
+      res.status(400).json({ errors: fieldErrors });
       return;
     }
 
@@ -58,7 +67,16 @@ export async function loginController(
     const result = loginSchema.safeParse(req.body);
 
     if (!result.success) {
-      res.status(400).json({ errors: result.error.flatten().fieldErrors });
+      const formatted = result.error.format();
+
+      const fieldErrors = Object.fromEntries(
+        Object.entries(formatted).map(([key, value]) => [
+          key,
+          value?._errors || []
+        ])
+      );
+
+      res.status(400).json({ errors: fieldErrors });
       return;
     }
 
