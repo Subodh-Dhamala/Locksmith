@@ -1,22 +1,12 @@
+import { Request } from 'express';
 
-//User type
 export interface AuthUser {
   id: string;
   email: string;
-  name: string | null;
   role: string;
-  isVerified: boolean;
-  oauthProvider: string | null;
-  oauthId: string | null;
-  failedLoginAttempts: number;
-  lockedUntil: Date | null;
-  twoFactorSecret: string | null;
-  twoFactorEnabled: boolean;
-  createdAt: Date;
-  passwordHash: string | null;
 }
 
-//extend express request
+// // Extend Express Request globally
 // declare global {
 //   namespace Express {
 //     interface Request {
@@ -25,7 +15,7 @@ export interface AuthUser {
 //   }
 // }
 
-//JWT payload
+// JWT payload type
 export interface TokenPayload {
   userId: string;
   email: string;
@@ -34,9 +24,7 @@ export interface TokenPayload {
   exp?: number;
 }
 
-// strict auth request
-export interface AuthRequest extends Express.Request {
+// Safer typed request (optional use in controllers)
+export interface AuthRequest extends Request {
   user: AuthUser;
 }
-
-

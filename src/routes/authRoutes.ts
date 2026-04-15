@@ -12,6 +12,11 @@ import passport from 'passport';
 import { issueTokens } from '../services/tokenService';
 import { refreshTokenController } from '../controller/passwordController';
 
+import { twoFactorLoginController } from '../controller/authController';
+import { enable2FAController } from '../controller/authController';
+
+import { authMiddleware } from '../middlewares/authMiddleware';
+
 const router = Router();
 
 router.post('/register', looseLimiter, registerController);
@@ -89,5 +94,9 @@ router.get(
     });
   }
 );
+
+router.post('/2fa/enable', authMiddleware, enable2FAController);
+router.post('/2fa/login', twoFactorLoginController);
+
 
 export default router;
