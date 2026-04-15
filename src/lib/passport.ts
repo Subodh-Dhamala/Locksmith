@@ -5,15 +5,23 @@ import {
   StrategyOptionsWithoutRequest,
 } from 'passport-jwt';
 
-import { Profile as GitHubProfile, Strategy as GitHubStrategy } from 'passport-github2';
-import { Strategy as GoogleStrategy, Profile as GoogleProfile } from 'passport-google-oauth20';
+import {
+  Profile as GitHubProfile,
+  Strategy as GitHubStrategy,
+} from 'passport-github2';
+
+import {
+  Strategy as GoogleStrategy,
+  Profile as GoogleProfile,
+} from 'passport-google-oauth20';
+
 import { VerifyCallback } from 'passport-oauth2';
 
 import prisma from './prisma';
 import logger from './logger';
 import { TokenPayload } from './jwt';
 
-//jwt strategy
+// jwt strategy
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET is missing');
 }
@@ -40,7 +48,7 @@ passport.use(
   })
 );
 
-//google strategy
+// google strategy
 passport.use(
   new GoogleStrategy(
     {
@@ -63,27 +71,33 @@ passport.use(
           where: { email },
         });
 
-        if (existingUser && existingUser.oauthProvider !== 'google') {
-          return done(
-            new Error('Email already registered with different provider'),
-            false
-          );
-        }
+        let user;
 
-        const user = await prisma.user.upsert({
-          where: { email },
-          update: {
-            oauthProvider: 'google',
-            oauthId: profile.id,
-          },
-          create: {
-            email,
-            name: profile.displayName,
-            oauthProvider: 'google',
-            oauthId: profile.id,
-            isVerified: true,
-          },
-        });
+        if (!existingUser) {
+          user = await prisma.user.create({
+            data: {
+              email,
+              name: profile.displayName,
+              isVerified: true,
+              authProviders: {
+                create: {
+                  provider: 'google',
+                  providerId: profile.id,
+                },
+              },
+            },
+          });
+        } else {
+          await prisma.authProvider.create({
+            data: {
+              provider: 'google',
+              providerId: profile.id,
+              userId: existingUser.id,
+            },
+          });
+
+          user = existingUser;
+        }
 
         return done(null, user);
       } catch (error) {
@@ -94,7 +108,7 @@ passport.use(
   )
 );
 
-//github strategy
+// github strategy
 passport.use(
   new GitHubStrategy(
     {
@@ -118,27 +132,33 @@ passport.use(
           where: { email },
         });
 
-        if (existingUser && existingUser.oauthProvider !== 'github') {
-          return done(
-            new Error('Email already registered with different provider'),
-            false
-          );
-        }
+        let user;
 
-        const user = await prisma.user.upsert({
-          where: { email },
-          update: {
-            oauthProvider: 'github',
-            oauthId: profile.id.toString(),
-          },
-          create: {
-            email,
-            name: profile.displayName ?? profile.username,
-            oauthProvider: 'github',
-            oauthId: profile.id.toString(),
-            isVerified: true,
-          },
-        });
+        if (!existingUser) {
+          user = await prisma.user.create({
+            data: {
+              email,
+              name: profile.displayName ?? profile.username,
+              isVerified: true,
+              authProviders: {
+                create: {
+                  provider: 'github',
+                  providerId: profile.id.toString(),
+                },
+              },
+            },
+          });
+        } else {
+          await prisma.authProvider.create({
+            data: {
+              provider: 'github',
+              providerId: profile.id.toString(),
+              userId: existingUser.id,
+            },
+          });
+
+          user = existingUser;
+        }
 
         return done(null, user);
       } catch (error) {
