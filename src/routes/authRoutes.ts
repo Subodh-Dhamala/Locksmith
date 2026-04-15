@@ -57,4 +57,37 @@ router.get(
   }
 );
 
+
+//github redirection
+router.get(
+  '/github',
+  passport.authenticate('github', { scope: ['user:email'] })
+);
+
+//callback
+router.get(
+  '/github/callback',
+  passport.authenticate('github', { session: false }),
+  async (req, res) => {
+    const user = req.user as any;
+
+    const tokens = await issueTokens({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      accessToken: tokens.accessToken,
+    });
+  }
+);
+
 export default router;

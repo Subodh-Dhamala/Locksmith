@@ -5,16 +5,13 @@ import {
   StrategyOptionsWithoutRequest,
 } from 'passport-jwt';
 
-import { Profile as GitHubProfile } from 'passport-github2';
+import { Profile as GitHubProfile, Strategy as GitHubStrategy } from 'passport-github2';
+import { Strategy as GoogleStrategy, Profile as GoogleProfile } from 'passport-google-oauth20';
 import { VerifyCallback } from 'passport-oauth2';
-
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { Strategy as GitHubStrategy } from 'passport-github2';
 
 import prisma from './prisma';
 import logger from './logger';
 import { TokenPayload } from './jwt';
-
 
 //jwt strategy
 if (!process.env.JWT_SECRET) {
@@ -33,9 +30,7 @@ passport.use(
         where: { id: payload.userId },
       });
 
-      if (!user) {
-        return done(null, false);
-      }
+      if (!user) return done(null, false);
 
       return done(null, user);
     } catch (error) {
@@ -45,7 +40,6 @@ passport.use(
   })
 );
 
-
 //google strategy
 passport.use(
   new GoogleStrategy(
@@ -54,13 +48,16 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       callbackURL: process.env.GOOGLE_CALLBACK_URL!,
     },
-    async (_accessToken, _refreshToken, profile, done) => {
+    async (
+      _accessToken: string,
+      _refreshToken: string,
+      profile: GoogleProfile,
+      done: VerifyCallback
+    ) => {
       try {
         const email = profile.emails?.[0]?.value;
 
-        if (!email) {
-          return done(new Error('No email found in Google profile'), false);
-        }
+        if (!email) return done(new Error('No email from Google'), false);
 
         const existingUser = await prisma.user.findUnique({
           where: { email },
@@ -68,7 +65,7 @@ passport.use(
 
         if (existingUser && existingUser.oauthProvider !== 'google') {
           return done(
-            new Error('Email already registered with a different provider'),
+            new Error('Email already registered with different provider'),
             false
           );
         }
@@ -91,12 +88,11 @@ passport.use(
         return done(null, user);
       } catch (error) {
         logger.error({ error }, 'Google strategy error');
-        return done(error, false);
+        return done(error as Error, false);
       }
     }
   )
 );
-
 
 //github strategy
 passport.use(
@@ -116,9 +112,7 @@ passport.use(
       try {
         const email = profile.emails?.[0]?.value;
 
-        if (!email) {
-          return done(new Error('No email found in GitHub profile'));
-        }
+        if (!email) return done(new Error('No email from GitHub'), false);
 
         const existingUser = await prisma.user.findUnique({
           where: { email },
@@ -126,7 +120,8 @@ passport.use(
 
         if (existingUser && existingUser.oauthProvider !== 'github') {
           return done(
-            new Error('Email already registered with a different provider')
+            new Error('Email already registered with different provider'),
+            false
           );
         }
 
@@ -148,7 +143,7 @@ passport.use(
         return done(null, user);
       } catch (error) {
         logger.error({ error }, 'GitHub strategy error');
-        return done(error as Error);
+        return done(error as Error, false);
       }
     }
   )

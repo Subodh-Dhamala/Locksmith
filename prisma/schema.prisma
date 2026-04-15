@@ -13,25 +13,41 @@ enum Role {
 }
 
 model User {
-  id                  String    @id @default(cuid())
-  email               String    @unique
+  id                  String   @id @default(cuid())
+  email               String   @unique
   name                String?
   passwordHash        String?
-  role                Role      @default(USER)
-  isVerified          Boolean   @default(false)
-  oauthProvider       String?
-  oauthId             String?
-  failedLoginAttempts Int       @default(0)
+  role                Role     @default(USER)
+  isVerified          Boolean  @default(false)
+
+  failedLoginAttempts Int      @default(0)
   lockedUntil         DateTime?
+
   twoFactorSecret     String?
-  twoFactorEnabled    Boolean   @default(false)
-  createdAt           DateTime  @default(now())
+  twoFactorEnabled    Boolean  @default(false)
 
-  refreshTokens RefreshToken[]
-  resetTokens   ResetToken[]
-  verifyTokens  VerifyToken[]
+  createdAt           DateTime @default(now())
 
-  @@unique([oauthProvider, oauthId])
+  // relations
+  authProviders       AuthProvider[]
+  refreshTokens       RefreshToken[]
+  resetTokens         ResetToken[]
+  verifyTokens        VerifyToken[]
+}
+
+model AuthProvider {
+  id           String   @id @default(cuid())
+  userId       String
+
+  provider     String   // "google", "github", "local"
+  providerId   String?  // googleId / githubId
+
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([provider, providerId])
 }
 
 model RefreshToken {
