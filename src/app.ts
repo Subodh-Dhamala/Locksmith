@@ -8,7 +8,6 @@ import passwordRoutes from './routes/passwordRoutes';
 import userRoutes from './routes/userRoutes';
 
 import { errorMiddleware } from './middlewares/errorMiddleware';
-import { authMiddleware } from './middlewares/authMiddleware';
 
 import adminRoutes from './routes/adminRoutes';
 import moderatorRoutes from './routes/moderatorRoutes';

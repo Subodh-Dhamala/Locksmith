@@ -1,3 +1,4 @@
+
 //User type
 export interface AuthUser {
   id: string;
@@ -16,13 +17,13 @@ export interface AuthUser {
 }
 
 //extend express request
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthUser;
-    }
-  }
-}
+// declare global {
+//   namespace Express {
+//     interface Request {
+//       user?: AuthUser;
+//     }
+//   }
+// }
 
 //JWT payload
 export interface TokenPayload {
@@ -37,3 +38,5 @@ export interface TokenPayload {
 export interface AuthRequest extends Express.Request {
   user: AuthUser;
 }
+
+
