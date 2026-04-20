@@ -1,22 +1,7 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export type Role = "USER" | "ADMIN" | "MODERATOR";
-
-export type User = {
-  id:string,
-  name:string,
-  email:string,
-  role: Role;
-};
-
-export type AuthResponse = {
-  accessToken: string,
-  user: User,
-}
-
-type ApiError = {
-  message: string;
-}
+import { User,Role} from "@/types/user";
+import { AuthResponse, ApiError } from "@/types/auth";
 
 //core request wrapper
 
