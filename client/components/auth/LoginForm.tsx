@@ -1,56 +1,87 @@
+"use client";
+
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+
 import { FaGithub, FaLock, FaGoogle } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
+
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { oauthAPI } from "@/lib/api";
 
 export default function LoginForm() {
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      await login(email, password);
+    } catch (err: any) {
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Card>
-      <div className="text-center mb-8">
-        <h2 className="text-3xl text-white mb-2 font-bold">
-          Welcome Back!
-        </h2>
-      </div>
+      <form onSubmit={handleLogin} className="space-y-6">
 
-      <div className="space-y-6">
- 
-        <div>
-          <label className="text-xs text-gray-400 mb-2 block">
-            Email
-          </label>
-          <div className="relative">
-            <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <Input type="email" placeholder="name@domain.com" />
-          </div>
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-white">
+            Welcome Back!
+          </h2>
         </div>
 
-        <div>
-          <label className="text-xs text-gray-400 mb-2 block">
-            Password
-          </label>
-          <div className="relative">
-            <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <Input type="password" placeholder="••••••••" />
-          </div>
+        <div className="relative">
+          <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Input
+            type="email"
+            placeholder="name@domain.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="pl-10"
+          />
         </div>
 
-        <Button>Login</Button>
-
-      
-        <div className="text-center text-sm text-gray-400">
-          Don't have an account?{" "}
-          <span className="text-green-400 cursor-pointer hover:underline">
-            Register here
-          </span>
+        <div className="relative">
+          <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Input
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="pl-10"
+          />
         </div>
 
-        
-        <div className="mt-6 space-y-3">
+        <Button loading={loading}>
+          Login
+        </Button>
 
+        {error && (
+          <p className="text-red-400 text-sm text-center">
+            {error}
+          </p>
+        )}
+
+        <div className="space-y-3">
           <button
             type="button"
-            className="w-full border border-gray-600 p-3 rounded text-white flex items-center justify-center gap-2 hover:bg-gray-800 transition"
+            onClick={oauthAPI.google}
+            className="w-full border border-gray-600 p-3 rounded text-white flex items-center justify-center gap-2 hover:bg-gray-800"
           >
             <FaGoogle />
             Continue with Google
@@ -58,15 +89,15 @@ export default function LoginForm() {
 
           <button
             type="button"
-            className="w-full border border-gray-600 p-3 rounded text-white flex items-center justify-center gap-2 hover:bg-gray-800 transition"
+            onClick={oauthAPI.github}
+            className="w-full border border-gray-600 p-3 rounded text-white flex items-center justify-center gap-2 hover:bg-gray-800"
           >
             <FaGithub />
             Continue with GitHub
           </button>
-
         </div>
 
-      </div>
+      </form>
     </Card>
   );
 }
