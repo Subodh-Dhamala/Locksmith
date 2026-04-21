@@ -13,7 +13,8 @@ type AuthContextType = {
   accessToken : string | null;
 
   login: (email:string, password:string) => Promise<void>;
-  logout: ()=> Promise <void>
+  register: (name: string, email: string, password: string) => Promise<void>;
+  logout: ()=> Promise <void>;
 
   setUser: (user: User | null) => void;
 
@@ -39,6 +40,18 @@ export default function AuthProvider({children}: {children: ReactNode}) {
     router.push("/dashboard");
   }
 
+  //register
+  const register = async (name: string, email: string, password: string) => {
+  const data = await authApi.register(name, email, password);
+
+  setAccessToken(data.accessToken);
+  setTokenRef(data.accessToken);
+
+  setUser(data.user);
+
+  router.push("/dashboard");
+};
+
   //logout
   const logout = async ()=>{
     try{
@@ -59,6 +72,7 @@ export default function AuthProvider({children}: {children: ReactNode}) {
       user,
       accessToken,
       login,
+      register,
       logout,
       setUser,
     }}
