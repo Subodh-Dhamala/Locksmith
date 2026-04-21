@@ -1,4 +1,6 @@
 import "./globals.css";
+import AuthProvider from "@/context/AuthProvider";
+
 
 export const metadata = {
   title: "Locksmith",
@@ -12,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <AuthProvider>{children}</AuthProvider>
     </html>
   );
 }
