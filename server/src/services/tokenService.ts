@@ -31,7 +31,10 @@ export async function issueTokens(payload:TokenPayload):Promise<{
 }
 
 //rotate refreshToken
-export async function rotateRefreshToken(oldToken: string, payload: TokenPayload): Promise<{
+export async function rotateRefreshToken(
+  oldToken: string,
+  payload: TokenPayload // you can keep this param or remove it later
+): Promise<{
   accessToken: string;
   refreshToken: string;
 }> {
@@ -45,13 +48,26 @@ export async function rotateRefreshToken(oldToken: string, payload: TokenPayload
     throw new AppError('Invalid refresh token', 401);
   }
 
-  //delete old token
+  //check from db, not token payload
+  const user = await prisma.user.findUnique({
+    where: { id: existing.userId },
+  });
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // delete old token (rotation)
   await prisma.refreshToken.delete({
     where: { tokenHash: oldHash },
   });
 
-  //issue new tokens
-  return issueTokens(payload);
+  // issue fresh tokens from DB data
+  return issueTokens({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  });
 }
 
 //delete refresh token on logout
