@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 import {
   register,
   verifyEmail,
@@ -6,28 +6,20 @@ import {
   logout,
   enable2FA,
   verifyTwoFactorLogin,
-} from '../services/authService';
+  verifyTwoFactorSetup,
+} from "../services/authService";
 
-import {
-  registerSchema,
-  loginSchema,
-} from '../lib/validators';
+import { registerSchema, loginSchema } from "../lib/validators";
+import AppError from "../lib/AppError";
 
-import AppError from '../lib/AppError';
+import { cookieOptions } from '../utils/cookieOptions';
 
-// enable 2FA for logged-in user
-export async function enable2FAController(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+// enable 2FA
+export async function enable2FAController(req: Request, res: Response, next: NextFunction) {
   try {
     const user = (req as any).user;
 
-    // check auth
-    if (!user || !user.id) {
-      throw new AppError('Unauthorized', 401);
-    }
+    if (!user?.id) throw new AppError("Unauthorized", 401);
 
     const data = await enable2FA(user.id);
 
@@ -37,29 +29,39 @@ export async function enable2FAController(
   }
 }
 
-// verify 2FA during login
-export async function twoFactorLoginController(
+// ✅ verify 2FA setup (NEW)
+export async function verify2FASetupController(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> {
+) {
+  try {
+    const user = (req as any).user;
+    const { token } = req.body;
+
+    if (!user?.id) throw new AppError("Unauthorized", 401);
+    if (!token) throw new AppError("Missing token", 400);
+
+    const result = await verifyTwoFactorSetup(user.id, token);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+// 2FA login
+export async function twoFactorLoginController(req: Request, res: Response, next: NextFunction) {
   try {
     const { userId, token } = req.body;
 
-    // basic validation
     if (!userId || !token) {
-      throw new AppError('Missing 2FA credentials', 400);
+      throw new AppError("Missing 2FA credentials", 400);
     }
 
     const tokens = await verifyTwoFactorLogin(userId, token);
 
-    // set refresh token cookie
-    res.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("refreshToken", tokens.refreshToken, cookieOptions);
 
     res.status(200).json({
       accessToken: tokens.accessToken,
@@ -69,16 +71,11 @@ export async function twoFactorLoginController(
   }
 }
 
-// register new user
-export async function registerController(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+// register
+export async function registerController(req: Request, res: Response, next: NextFunction) {
   try {
     const result = registerSchema.safeParse(req.body);
 
-    // validation failed
     if (!result.success) {
       res.status(400).json({ errors: result.error.flatten().fieldErrors });
       return;
@@ -87,70 +84,46 @@ export async function registerController(
     await register(result.data);
 
     res.status(201).json({
-      message:
-        'Registration successful. Please check your email to verify your account.',
+      message: "Registration successful. Please verify email.",
     });
   } catch (error) {
     next(error);
   }
 }
 
-// verify email using token
-export async function verifyEmailController(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+// verify email
+export async function verifyEmailController(req: Request, res: Response, next: NextFunction) {
   try {
-    const token = req.params.token as string;
+    const token = req.params.token;
 
-    // token required
-    if (!token) {
-      throw new AppError('Token is required', 400);
-    }
+    if (!token) throw new AppError("Token required", 400);
 
-    await verifyEmail(token);
+    await verifyEmail(token as any);
 
-    res.status(200).json({ message: 'Email verified successfully' });
+    res.status(200).json({ message: "Email verified" });
   } catch (error) {
     next(error);
   }
 }
 
-// login user
-export async function loginController(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+// login
+export async function loginController(req: Request, res: Response, next: NextFunction) {
   try {
     const result = loginSchema.safeParse(req.body);
 
-    // validation failed
     if (!result.success) {
       res.status(400).json({ errors: result.error.flatten().fieldErrors });
       return;
     }
 
-    const {
-      accessToken,
-      refreshToken,
-      requiresTwoFactor,
-    } = await login(result.data);
+    const { accessToken, refreshToken, requiresTwoFactor } = await login(result.data);
 
-    // handle 2FA case
     if (requiresTwoFactor) {
       res.status(200).json({ requiresTwoFactor: true });
       return;
     }
 
-    // set refresh token
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("refreshToken", refreshToken, cookieOptions);
 
     res.status(200).json({ accessToken });
   } catch (error) {
@@ -158,30 +131,29 @@ export async function loginController(
   }
 }
 
-// logout user
+// logout
 export async function logoutController(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> {
+) {
   try {
-    const refreshToken = req.cookies?.refreshToken;
+    // support both cookie + body
+    const refreshToken =
+      req.cookies?.refreshToken || req.body.refreshToken;
 
-    // no token found
     if (!refreshToken) {
-      throw new AppError('No refresh token found', 400);
+      throw new AppError("No refresh token found", 400);
     }
 
     await logout(refreshToken);
 
-    // clear cookie
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+    res.clearCookie("refreshToken", {
+      ...cookieOptions,
+      maxAge: undefined,
     });
 
-    res.status(200).json({ message: 'Logged out successfully' });
+    res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     next(error);
   }

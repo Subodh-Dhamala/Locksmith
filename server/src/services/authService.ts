@@ -32,7 +32,7 @@ export async function enable2FA(userId: string) {
     where: { id: userId },
     data: {
       twoFactorSecret: secret.base32,
-      twoFactorEnabled: false,
+      twoFactorEnabled: false, // stays false until verified
     },
   });
 
@@ -43,6 +43,38 @@ export async function enable2FA(userId: string) {
     qr,
     secret: secret.base32,
   };
+}
+
+//verify 2FA setup (activation step)
+export async function verifyTwoFactorSetup(userId: string, token: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user || !user.twoFactorSecret) {
+    throw new AppError('2FA not initialized', 400);
+  }
+
+  const valid = speakeasy.totp.verify({
+    secret: user.twoFactorSecret,
+    encoding: 'base32',
+    token,
+    window: 1,
+  });
+
+  if (!valid) {
+    throw new AppError('Invalid 2FA code', 401);
+  }
+
+  //enable 2FA
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      twoFactorEnabled: true,
+    },
+  });
+
+  return { message: '2FA enabled successfully' };
 }
 
 // register user
@@ -135,14 +167,6 @@ export async function verifyTwoFactorLogin(
   if (!valid) {
     throw new AppError('Invalid 2FA code', 401);
   }
-
-  // enable 2FA after success
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      twoFactorEnabled: true,
-    },
-  });
 
   // issue tokens
   return issueTokens({

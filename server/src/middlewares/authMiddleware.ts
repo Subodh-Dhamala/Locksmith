@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../lib/jwt';
+import { isBlacklisted } from '../lib/blacklist';
 import AppError from '../lib/AppError';
 
 export function authMiddleware(
@@ -15,16 +16,22 @@ export function authMiddleware(
     }
 
     const token = authHeader.split(' ')[1];
+
+    //check blacklist before verifying
+    if (isBlacklisted(token)) {
+      throw new AppError('Token blacklisted', 401);
+    }
+
     const payload = verifyAccessToken(token);
 
-    // IMPORTANT: attach user properly
+    // attach user to request
     (req as any).user = {
       id: payload.userId,
       email: payload.email,
       role: payload.role,
     };
 
-    return next();
+    next();
   } catch (err) {
     next(err);
   }

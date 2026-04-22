@@ -5,6 +5,8 @@ import { forgotPasswordSchema, resetPasswordSchema } from '../lib/validators';
 import { verifyRefreshToken } from '../lib/jwt';
 import AppError from '../lib/AppError';
 
+import { cookieOptions } from '../utils/cookieOptions';
+
 //forgot password
 export async function forgotPasswordController(
   req: Request,
@@ -78,12 +80,7 @@ export async function refreshTokenController(
     });
 
     //set new refresh token cookie
-    res.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('refreshToken', tokens.refreshToken, cookieOptions);
 
     res.status(200).json({ accessToken: tokens.accessToken });
   } catch (error) {
