@@ -40,8 +40,8 @@ export async function enable2FA(userId: string) {
   const qr = await qrcode.toDataURL(secret.otpauth_url!);
 
   return {
-    qr,
-    secret: secret.base32,
+    qr
+    // secret: secret.base32,
   };
 }
 
