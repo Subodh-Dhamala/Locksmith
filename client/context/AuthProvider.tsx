@@ -1,63 +1,89 @@
 "use client";
 
-import {createContext, useState, ReactNode} from "react";
-import {useRouter} from "next/navigation";
+import {
+  createContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
-import {authApi} from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { authApi } from "@/lib/api";
 import { setTokenRef } from "@/lib/auth";
 
 import { User } from "@/types/user";
 
 type AuthContextType = {
   user: User | null;
-  accessToken : string | null;
+  isLoading: boolean;
 
-  login: (email:string, password:string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: ()=> Promise <void>;
-
-  setUser: (user: User | null) => void;
-
+  logout: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-export default function AuthProvider({children}: {children: ReactNode}) {
+export default function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken,setAccessToken] = useState<string | null> (null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+//session restore
+useEffect(() => {
+  const init = async () => {
+    try {
+      const data = await authApi.refresh();
+
+      setAccessToken(data.accessToken);
+      setTokenRef(data.accessToken);
+      setUser(data.user);
+    } catch {
+      setUser(null);
+      setAccessToken(null);
+      setTokenRef(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  init();
+}, []);
+
 
   //login
-  const login = async (email:string, password: string)=>{
-    const data = await authApi.login(email,password);
-    
+  const login = async (email: string, password: string) => {
+    const data = await authApi.login(email, password);
+
     setAccessToken(data.accessToken);
     setTokenRef(data.accessToken);
-
     setUser(data.user);
 
     router.push("/dashboard");
-  }
+  };
 
   //register
-  const register = async (name: string, email: string, password: string) => {
-  const data = await authApi.register(name, email, password);
+  const register = async (
+    name: string,
+    email: string,
+    password: string
+  ) => {
+    const data = await authApi.register(name, email, password);
 
-  setAccessToken(data.accessToken);
-  setTokenRef(data.accessToken);
+    setAccessToken(data.accessToken);
+    setTokenRef(data.accessToken);
+    setUser(data.user);
 
-  setUser(data.user);
-
-  router.push("/dashboard");
-};
+    router.push("/dashboard");
+  };
 
   //logout
-  const logout = async ()=>{
-    try{
+  const logout = async () => {
+    try {
       await authApi.logout();
-    }
-    finally{
+    } finally {
       setAccessToken(null);
       setTokenRef(null);
       setUser(null);
@@ -66,21 +92,17 @@ export default function AuthProvider({children}: {children: ReactNode}) {
     }
   };
 
-  return(
+  return (
     <AuthContext.Provider
-    value={{
-      user,
-      accessToken,
-      login,
-      register,
-      logout,
-      setUser,
-    }}
+      value={{
+        user,
+        isLoading,
+        login,
+        register,
+        logout,
+      }}
     >
       {children}
-
     </AuthContext.Provider>
   );
-  
-
 }
