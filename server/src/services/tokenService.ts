@@ -58,7 +58,7 @@ export async function rotateRefreshToken(
   }
 
   // delete old token (rotation)
-  await prisma.refreshToken.delete({
+  await prisma.refreshToken.deleteMany({
     where: { tokenHash: oldHash },
   });
 
