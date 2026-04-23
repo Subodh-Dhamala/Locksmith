@@ -2,22 +2,25 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import Spinner from "@/components/ui/Spinner";
 
 export default function OAuthSuccess() {
+  const { refresh } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // Let AuthProvider handle everything
-    const timer = setTimeout(() => {
-      router.replace("/dashboard");
-    }, 500);
+    const run = async () => {
+      try {
+        await refresh();
+        router.replace("/dashboard");
+      } catch {
+        router.replace("/login");
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, []);
+    run();
+  }, [refresh, router]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center text-white">
-      Completing login...
-    </div>
-  );
+  return <Spinner/>;
 }

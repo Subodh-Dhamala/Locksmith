@@ -8,7 +8,7 @@ import {
 } from "react";
 
 import { useRouter } from "next/navigation";
-import { authApi } from "@/lib/api";
+import { authApi,oauthAPI} from "@/lib/api";
 import { setTokenRef } from "@/lib/auth";
 
 import { User } from "@/types/user";
@@ -20,6 +20,10 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  loginWithGoogle: () => void;
+  loginWithGithub: () => void;
+
+  refresh: () => Promise<any>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -61,7 +65,7 @@ useEffect(() => {
     setTokenRef(data.accessToken);
     setUser(data.user);
 
-    router.push("/dashboard");
+    router.replace("/dashboard");
   };
 
   //register
@@ -76,7 +80,7 @@ useEffect(() => {
     setTokenRef(data.accessToken);
     setUser(data.user);
 
-    router.push("/dashboard");
+    router.replace("/dashboard");
   };
 
   //logout
@@ -88,9 +92,36 @@ useEffect(() => {
       setTokenRef(null);
       setUser(null);
 
-      router.push("/login");
+      router.replace("/login");
     }
   };
+
+//oauth api
+const loginWithGoogle = () => {
+  oauthAPI.google();
+};
+
+const loginWithGithub = () => {
+  oauthAPI.github();
+};
+
+//refresh 
+const refresh = async () => {
+  try {
+    const data = await authApi.refresh();
+
+    setAccessToken(data.accessToken);
+    setTokenRef(data.accessToken);
+    setUser(data.user);
+
+    return data;
+  } catch (err) {
+    setUser(null);
+    setAccessToken(null);
+    setTokenRef(null);
+    throw err;
+  }
+};
 
   return (
     <AuthContext.Provider
@@ -100,6 +131,9 @@ useEffect(() => {
         login,
         register,
         logout,
+        loginWithGithub,
+        loginWithGoogle,
+        refresh
       }}
     >
       {children}

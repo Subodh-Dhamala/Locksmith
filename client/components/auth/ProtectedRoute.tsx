@@ -1,8 +1,8 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
+import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import Spinner from "@/components/ui/Spinner";
 
 export default function ProtectedRoute({
@@ -15,15 +15,16 @@ export default function ProtectedRoute({
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push("/login");
+      router.replace("/login");
     }
   }, [user, isLoading, router]);
 
   if (isLoading) {
-    return <Spinner />;
+    return <Spinner/>;
   }
 
   if (!user) return null;
 
+  //authenticated
   return <>{children}</>;
 }

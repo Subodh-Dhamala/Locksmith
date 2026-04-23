@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import Link from "next/link";
 
 import { FaGithub, FaLock, FaGoogle } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
@@ -9,10 +10,9 @@ import { MdEmail } from "react-icons/md";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
-import { oauthAPI } from "@/lib/api";
 
 export default function LoginForm() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle, loginWithGithub } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,8 +28,10 @@ export default function LoginForm() {
 
     try {
       await login(email, password);
-    } catch (err: any) {
-      setError(err.message || "Login failed");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Login failed";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -45,6 +47,7 @@ export default function LoginForm() {
           </h2>
         </div>
 
+        {/* Email */}
         <div className="relative">
           <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <Input
@@ -56,6 +59,7 @@ export default function LoginForm() {
           />
         </div>
 
+        {/* Password */}
         <div className="relative">
           <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <Input
@@ -77,10 +81,21 @@ export default function LoginForm() {
           </p>
         )}
 
+        <div className="text-center text-sm text-gray-400">
+          Don't have an account?{" "}
+          <Link
+            href="/register"
+            className="text-green-400 hover:underline"
+          >
+            Register here
+          </Link>
+        </div>
+
+        {/* OAuth */}
         <div className="space-y-3">
           <button
             type="button"
-            onClick={oauthAPI.google}
+            onClick={loginWithGoogle}
             className="w-full border border-gray-600 p-3 rounded text-white flex items-center justify-center gap-2 hover:bg-gray-800"
           >
             <FaGoogle />
@@ -89,7 +104,7 @@ export default function LoginForm() {
 
           <button
             type="button"
-            onClick={oauthAPI.github}
+            onClick={loginWithGithub}
             className="w-full border border-gray-600 p-3 rounded text-white flex items-center justify-center gap-2 hover:bg-gray-800"
           >
             <FaGithub />
