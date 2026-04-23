@@ -10,17 +10,26 @@ export default function OAuthSuccess() {
   const router = useRouter();
 
   useEffect(() => {
+    let mounted = true;
+
     const run = async () => {
       try {
         await refresh();
-        router.replace("/dashboard");
+
+        if (mounted) {
+          router.replace("/dashboard");
+        }
       } catch {
         router.replace("/login");
       }
     };
 
     run();
-  }, [refresh, router]);
 
-  return <Spinner/>;
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return <Spinner />;
 }

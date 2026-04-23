@@ -47,8 +47,8 @@ router.get(
 
       res.cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: 'none',
+        secure: false, //false for localhost
+        sameSite: 'lax',
         path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
@@ -81,8 +81,8 @@ router.get(
 
       res.cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: 'none',
+        secure: false,
+        sameSite: 'lax',
         path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });

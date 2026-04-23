@@ -14,6 +14,8 @@ import AppError from "../lib/AppError";
 
 import { cookieOptions } from '../utils/cookieOptions';
 
+import { getUserById } from '../services/userService';
+
 // enable 2FA
 export async function enable2FAController(req: Request, res: Response, next: NextFunction) {
   try {
@@ -29,7 +31,7 @@ export async function enable2FAController(req: Request, res: Response, next: Nex
   }
 }
 
-// ✅ verify 2FA setup (NEW)
+//verify 2fa 
 export async function verify2FASetupController(
   req: Request,
   res: Response,
@@ -116,16 +118,26 @@ export async function loginController(req: Request, res: Response, next: NextFun
       return;
     }
 
-    const { accessToken, refreshToken, requiresTwoFactor } = await login(result.data);
+    const { accessToken, refreshToken, requiresTwoFactor, userId } = await login(result.data);
 
     if (requiresTwoFactor) {
-      res.status(200).json({ requiresTwoFactor: true });
+      res.status(200).json({ requiresTwoFactor: true, userId });
       return;
     }
 
+    const user = await getUserById(userId!);
+
     res.cookie("refreshToken", refreshToken, cookieOptions);
 
-    res.status(200).json({ accessToken });
+    res.status(200).json({ 
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      }
+    });
   } catch (error) {
     next(error);
   }
