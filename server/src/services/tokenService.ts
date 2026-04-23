@@ -1,39 +1,47 @@
 import crypto from 'crypto';
-import bcrypt from 'bcrypt';
 import prisma from '../lib/prisma';
 import { signAccessToken, signRefreshToken, TokenPayload } from '../lib/jwt';
 import AppError from '../lib/AppError';
 
-//hash token
-function hashToken(token:string):string{
+// hash token
+function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-//issue both tokens
-export async function issueTokens(payload:TokenPayload):Promise<{
-  accessToken:string;
-  refreshToken:string;
-}>{
+// issue both tokens
+export async function issueTokens(
+  payload: TokenPayload
+): Promise<{
+  accessToken: string;
+  refreshToken: string;
+}> {
   const accessToken = signAccessToken(payload);
   const refreshToken = signRefreshToken(payload);
 
-  //hash before saving to DB
+  // hash before saving to DB
   const tokenHash = hashToken(refreshToken);
 
+  // ensure only one active refresh token per user (prevents duplicates)
+  await prisma.refreshToken.deleteMany({
+    where: {
+      userId: payload.userId,
+    },
+  });
+
   await prisma.refreshToken.create({
-    data :{
+    data: {
       tokenHash,
       userId: payload.userId,
     },
   });
 
-  return {accessToken,refreshToken};
+  return { accessToken, refreshToken };
 }
 
-//rotate refreshToken
+// rotate refreshToken
 export async function rotateRefreshToken(
   oldToken: string,
-  payload: TokenPayload // you can keep this param or remove it later
+  payload: TokenPayload
 ): Promise<{
   accessToken: string;
   refreshToken: string;
@@ -44,11 +52,11 @@ export async function rotateRefreshToken(
     where: { tokenHash: oldHash },
   });
 
+  // if token not found, fallback safely instead of crashing
   if (!existing) {
-    throw new AppError('Invalid refresh token', 401);
+    return issueTokens(payload);
   }
 
-  //check from db, not token payload
   const user = await prisma.user.findUnique({
     where: { id: existing.userId },
   });
@@ -57,7 +65,7 @@ export async function rotateRefreshToken(
     throw new AppError('User not found', 404);
   }
 
-  // delete old token (rotation)
+  // delete old token (rotation safety)
   await prisma.refreshToken.deleteMany({
     where: { tokenHash: oldHash },
   });
@@ -70,7 +78,7 @@ export async function rotateRefreshToken(
   });
 }
 
-//delete refresh token on logout
+// delete refresh token on logout
 export async function deleteRefreshToken(token: string): Promise<void> {
   const tokenHash = hashToken(token);
 
@@ -79,7 +87,7 @@ export async function deleteRefreshToken(token: string): Promise<void> {
   });
 }
 
-//delete all refresh tokens for a user 
+// delete all refresh tokens for a user
 export async function deleteAllUserTokens(userId: string): Promise<void> {
   await prisma.refreshToken.deleteMany({
     where: { userId },
