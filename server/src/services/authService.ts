@@ -255,6 +255,7 @@ export async function login(input: LoginInput): Promise<{
   return {
     ...tokens,
     requiresTwoFactor: false,
+    userId:user.id,
   };
 }
 
