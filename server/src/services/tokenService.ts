@@ -28,8 +28,15 @@ export async function issueTokens(
     },
   });
 
-  await prisma.refreshToken.create({
-    data: {
+  // safe insert (prevents race condition + duplicate error)
+  await prisma.refreshToken.upsert({
+    where: {
+      tokenHash,
+    },
+    update: {
+      userId: payload.userId,
+    },
+    create: {
       tokenHash,
       userId: payload.userId,
     },
