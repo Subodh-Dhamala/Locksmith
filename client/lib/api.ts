@@ -108,8 +108,16 @@ export const authApi = {
 
 // admin api
 export const adminAPI = {
+  getUsers: (page = 1, limit = 10) =>
+    authRequest<{
+      users: User[];
+      pagination: { total: number; page: number; limit: number; totalPages: number };
+    }>(`/admin/users?page=${page}&limit=${limit}`, {
+      method: "GET",
+    }),
+
   updateUserRole: (userId: string, role: Role) =>
-    authRequest<User>(`/admin/users/${userId}/role`, {
+    authRequest<{ message: string; user: User }>(`/admin/users/${userId}/role`, {
       method: "PUT",
       body: JSON.stringify({ role }),
     }),
@@ -123,7 +131,7 @@ export const adminAPI = {
 // moderator api
 export const moderatorAPI = {
   getUsers: () =>
-    authRequest<User[]>("/moderator/users", {
+    authRequest<{ users: User[] }>("/moderator/users", {
       method: "GET",
     }),
 };

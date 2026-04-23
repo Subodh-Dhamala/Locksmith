@@ -83,13 +83,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     router.replace("/dashboard");
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    const data = await authApi.register(name, email, password);
-    setAccessToken(data.accessToken);
-    setTokenRef(data.accessToken);
-    setUser(data.user);
-    router.replace("/dashboard");
-  };
+ const register = async (name: string, email: string, password: string) => {
+  await authApi.register(name, email, password);
+  // router.replace("/login"); 
+};
 
   const logout = async () => {
     try {

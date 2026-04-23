@@ -23,7 +23,7 @@ export async function sendVerificationEmail(
   email:string,
   token:string
 ): Promise<void>{
-  const url = `${process.env.CLIENT_URL}/auth/verify-email/${token}`;
+  const url = `${process.env.CLIENT_URL}/verify-email/${token}`;
 
   await transporter.sendMail({
     from: process.env.SMTP_FROM,
