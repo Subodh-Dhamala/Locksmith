@@ -5,6 +5,8 @@ import { forgotPasswordSchema, resetPasswordSchema } from '../lib/validators';
 import { verifyRefreshToken } from '../lib/jwt';
 import AppError from '../lib/AppError';
 
+import { getUserById} from '../services/userService';
+
 import { cookieOptions } from '../utils/cookieOptions';
 
 //forgot password
@@ -79,11 +81,28 @@ export async function refreshTokenController(
       role: payload.role,
     });
 
+     const user = await getUserById(payload.userId); 
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+
     //set new refresh token cookie
     res.cookie('refreshToken', tokens.refreshToken, cookieOptions);
 
-    res.status(200).json({ accessToken: tokens.accessToken });
-  } catch (error) {
+  res.status(200).json({
+      accessToken: tokens.accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    });
+
+  }
+    
+    catch (error) {
     next(error);
   }
 }
