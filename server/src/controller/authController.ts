@@ -62,11 +62,18 @@ export async function twoFactorLoginController(req: Request, res: Response, next
     }
 
     const tokens = await verifyTwoFactorLogin(userId, token);
+    const user = await getUserById(userId);
 
     res.cookie("refreshToken", tokens.refreshToken, cookieOptions);
 
     res.status(200).json({
       accessToken: tokens.accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      }
     });
   } catch (error) {
     next(error);
