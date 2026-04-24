@@ -22,7 +22,6 @@ export default function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setError(null);
     setLoading(true);
 
@@ -40,14 +39,12 @@ export default function LoginForm() {
   return (
     <Card>
       <form onSubmit={handleLogin} className="space-y-6">
-
         <div className="text-center">
           <h2 className="text-3xl font-bold text-white">
             Welcome Back!
           </h2>
         </div>
 
-        {/* Email */}
         <div className="relative">
           <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <Input
@@ -59,7 +56,6 @@ export default function LoginForm() {
           />
         </div>
 
-        {/* Password */}
         <div className="relative">
           <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <Input
@@ -71,7 +67,16 @@ export default function LoginForm() {
           />
         </div>
 
-        <Button loading={loading}>
+        <div className="flex justify-end -mt-3">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-green-400 hover:text-green-300 hover:underline transition"
+          >
+            Forgot password?
+          </Link>
+        </div>
+
+        <Button loading={loading} disabled={loading}>
           Login
         </Button>
 
@@ -91,7 +96,6 @@ export default function LoginForm() {
           </Link>
         </div>
 
-        {/* OAuth */}
         <div className="space-y-3">
           <button
             type="button"
@@ -111,7 +115,6 @@ export default function LoginForm() {
             Continue with GitHub
           </button>
         </div>
-
       </form>
     </Card>
   );

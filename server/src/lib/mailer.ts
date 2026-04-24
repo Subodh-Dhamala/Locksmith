@@ -43,7 +43,7 @@ export async function sendPasswordResetEmail(
   email: string,
   token: string
 ): Promise<void>{
-  const url = `${process.env.CLIENT_URL}/auth/reset-password/${token}`;
+  const url = `${process.env.CLIENT_URL}/reset-password/${token}`;
 
 await transporter.sendMail({
     from: process.env.SMTP_FROM,

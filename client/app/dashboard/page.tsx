@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import RoleGuard from "@/components/auth/RoleGuard";
@@ -65,18 +67,26 @@ export default function DashboardPage() {
     <ProtectedRoute>
       <div className="p-6 text-white space-y-6">
 
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-gray-400 text-sm mt-1">
-              {user?.email} — <span className="text-green-400">{user?.role}</span>
+              {user?.email} —{" "}
+              <span className="text-green-400">{user?.role}</span>
             </p>
           </div>
-          <LogoutButton />
+
+          <div className="flex gap-3 items-center">
+            <Link
+              href="/settings"
+              className="text-green-400 hover:text-green-300 hover:underline text-sm transition"
+            >
+              Settings
+            </Link>
+            <LogoutButton />
+          </div>
         </div>
 
-        {/* USER view */}
         <RoleGuard role="USER">
           <div className="bg-gray-800 rounded p-4 space-y-2">
             <h2 className="text-lg font-semibold">Your Profile</h2>
@@ -86,7 +96,6 @@ export default function DashboardPage() {
           </div>
         </RoleGuard>
 
-        {/* ADMIN + MODERATOR user table */}
         <RoleGuard role={["ADMIN", "MODERATOR"]}>
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">All Users</h2>
@@ -110,14 +119,24 @@ export default function DashboardPage() {
                   </thead>
                   <tbody>
                     {users.map((u) => (
-                      <tr key={u.id} className="border-b border-gray-800 hover:bg-gray-800">
+                      <tr
+                        key={u.id}
+                        className="border-b border-gray-800 hover:bg-gray-800"
+                      >
                         <td className="py-2 pr-4">{u.name ?? "—"}</td>
-                        <td className="py-2 pr-4 text-gray-300">{u.email}</td>
+                        <td className="py-2 pr-4 text-gray-300">
+                          {u.email}
+                        </td>
                         <td className="py-2 pr-4">
                           <RoleGuard role="ADMIN">
                             <select
                               value={u.role}
-                              onChange={(e) => handleRoleChange(u.id, e.target.value as Role)}
+                              onChange={(e) =>
+                                handleRoleChange(
+                                  u.id,
+                                  e.target.value as Role
+                                )
+                              }
                               className="bg-gray-700 text-white text-xs rounded px-2 py-1 border border-gray-600"
                             >
                               <option value="USER">USER</option>
@@ -126,11 +145,19 @@ export default function DashboardPage() {
                             </select>
                           </RoleGuard>
                           <RoleGuard role="MODERATOR">
-                            <span className="text-gray-300">{u.role}</span>
+                            <span className="text-gray-300">
+                              {u.role}
+                            </span>
                           </RoleGuard>
                         </td>
                         <td className="py-2 pr-4">
-                          <span className={u.isVerified ? "text-green-400" : "text-red-400"}>
+                          <span
+                            className={
+                              u.isVerified
+                                ? "text-green-400"
+                                : "text-red-400"
+                            }
+                          >
                             {u.isVerified ? "Yes" : "No"}
                           </span>
                         </td>
@@ -153,12 +180,13 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Pagination — ADMIN only */}
             <RoleGuard role="ADMIN">
               {totalPages > 1 && (
                 <div className="flex gap-2 mt-2">
                   <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    onClick={() =>
+                      setPage((p) => Math.max(1, p - 1))
+                    }
                     disabled={page === 1}
                     className="text-xs border border-gray-600 px-3 py-1 rounded hover:bg-gray-800 disabled:opacity-40"
                   >
@@ -168,7 +196,11 @@ export default function DashboardPage() {
                     {page} / {totalPages}
                   </span>
                   <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      setPage((p) =>
+                        Math.min(totalPages, p + 1)
+                      )
+                    }
                     disabled={page === totalPages}
                     className="text-xs border border-gray-600 px-3 py-1 rounded hover:bg-gray-800 disabled:opacity-40"
                   >
@@ -177,10 +209,8 @@ export default function DashboardPage() {
                 </div>
               )}
             </RoleGuard>
-
           </div>
         </RoleGuard>
-
       </div>
     </ProtectedRoute>
   );

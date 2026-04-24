@@ -76,6 +76,21 @@ async function authRequest<T>(
   throw new Error((data as ApiError)?.message || "Request failed");
 }
 
+//user api
+export const userAPI = {
+  updateProfile: (data: { name?: string; email?: string }) =>
+    authRequest<User>("/user/me", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  changePassword: (oldPassword: string, newPassword: string, confirmPassword: string) =>
+    authRequest<{ message: string }>("/user/me/password", {
+      method: "PUT",
+      body: JSON.stringify({ oldPassword, newPassword, confirmPassword }),
+    }),
+};
+
 // auth api
 export const authApi = {
   login: (email: string, password: string) =>
@@ -104,6 +119,29 @@ export const authApi = {
     authRequest<User>("/user/me", {
       method: "GET",
     }),
+
+  forgotPassword: (email: string) =>
+    request<{ message: string }>("/auth/password/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  }),
+
+  resetPassword: (token: string, password: string, confirmPassword: string) =>
+  request<{ message: string }>(`/auth/password/reset-password/${token}`, {
+    method: "POST",
+    body: JSON.stringify({ password, confirmPassword }),
+  }),
+
+  enable2FA: () =>
+  authRequest<{ qr: string }>("/auth/2fa/enable", {
+    method: "POST",
+  }),
+
+verify2FASetup: (token: string) =>
+  authRequest<{ message: string }>("/auth/2fa/verify-setup", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  }),
 };
 
 // admin api
