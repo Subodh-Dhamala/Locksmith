@@ -142,6 +142,12 @@ verify2FASetup: (token: string) =>
     method: "POST",
     body: JSON.stringify({ token }),
   }),
+
+  twoFactorLogin: (userId: string, token: string) =>
+  request<AuthResponse>("/auth/2fa/login", {
+    method: "POST",
+    body: JSON.stringify({ userId, token }),
+  }),
 };
 
 // admin api
