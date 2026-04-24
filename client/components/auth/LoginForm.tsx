@@ -10,15 +10,20 @@ import { MdEmail } from "react-icons/md";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import OTPForm from "@/components/auth/OTPForm";
 
 export default function LoginForm() {
-  const { login, loginWithGoogle, loginWithGithub } = useAuth();
+  const { login, loginWithGoogle, loginWithGithub, pendingTwoFactor } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // show OTP form if 2FA is required
+  if (pendingTwoFactor) {
+    return <OTPForm />;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +33,7 @@ export default function LoginForm() {
     try {
       await login(email, password);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Login failed";
+      const message = err instanceof Error ? err.message : "Login failed";
       setError(message);
     } finally {
       setLoading(false);
@@ -40,9 +44,7 @@ export default function LoginForm() {
     <Card>
       <form onSubmit={handleLogin} className="space-y-6">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-white">
-            Welcome Back!
-          </h2>
+          <h2 className="text-3xl font-bold text-white">Welcome Back!</h2>
         </div>
 
         <div className="relative">
@@ -68,30 +70,20 @@ export default function LoginForm() {
         </div>
 
         <div className="flex justify-end -mt-3">
-          <Link
-            href="/forgot-password"
-            className="text-sm text-green-400 hover:text-green-300 hover:underline transition"
-          >
+          <Link href="/forgot-password" className="text-sm text-green-400 hover:underline">
             Forgot password?
           </Link>
         </div>
 
-        <Button loading={loading} disabled={loading}>
-          Login
-        </Button>
+        <Button loading={loading} disabled={loading}>Login</Button>
 
         {error && (
-          <p className="text-red-400 text-sm text-center">
-            {error}
-          </p>
+          <p className="text-red-400 text-sm text-center">{error}</p>
         )}
 
         <div className="text-center text-sm text-gray-400">
           Don't have an account?{" "}
-          <Link
-            href="/register"
-            className="text-green-400 hover:underline"
-          >
+          <Link href="/register" className="text-green-400 hover:underline">
             Register here
           </Link>
         </div>

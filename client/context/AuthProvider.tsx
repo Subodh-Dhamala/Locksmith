@@ -15,7 +15,9 @@ import { User } from "@/types/user";
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
+  pendingTwoFactor: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithOTP: (code: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loginWithGoogle: () => void;
@@ -31,6 +33,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingTwoFactor, setPendingTwoFactor] = useState(false);
+  const [twoFactorUserId, setTwoFactorUserId] = useState<string | null>(null);
 
   // session restore
   useEffect(() => {
@@ -48,7 +52,6 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     };
-
     init();
   }, []);
 
@@ -77,16 +80,32 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const data = await authApi.login(email, password);
+
+    if (data.requiresTwoFactor) {
+      setPendingTwoFactor(true);
+      setTwoFactorUserId(data.userId!);
+      return;
+    }
+
     setAccessToken(data.accessToken);
     setTokenRef(data.accessToken);
     setUser(data.user);
     router.replace("/dashboard");
   };
 
- const register = async (name: string, email: string, password: string) => {
-  await authApi.register(name, email, password);
-  // router.replace("/login"); 
-};
+  const loginWithOTP = async (code: string) => {
+    const data = await authApi.twoFactorLogin(twoFactorUserId!, code);
+    setAccessToken(data.accessToken);
+    setTokenRef(data.accessToken);
+    setUser(data.user);
+    setPendingTwoFactor(false);
+    setTwoFactorUserId(null);
+    router.replace("/dashboard");
+  };
+
+  const register = async (name: string, email: string, password: string) => {
+    await authApi.register(name, email, password);
+  };
 
   const logout = async () => {
     try {
@@ -115,7 +134,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isLoading,
+        pendingTwoFactor,
         login,
+        loginWithOTP,
         register,
         logout,
         loginWithGithub,
