@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 
-import { FaLock, FaUser } from "react-icons/fa";
+import { FaLock, FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
 import Card from "@/components/ui/Card";
@@ -17,17 +17,15 @@ export default function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setError(null);
     setLoading(true);
-
     try {
       await register(name, email, password);
       setSuccess(true);
@@ -44,7 +42,8 @@ export default function RegisterForm() {
         <div className="text-center space-y-4 py-4">
           <h2 className="text-2xl font-bold text-white">Check your email!</h2>
           <p className="text-gray-400">
-            We sent a verification link to <span className="text-green-400">{email}</span>.
+            We sent a verification link to{" "}
+            <span className="text-green-400">{email}</span>.
             Please verify before logging in.
           </p>
           <Link href="/login" className="text-green-400 hover:underline text-sm">
@@ -58,7 +57,6 @@ export default function RegisterForm() {
   return (
     <Card>
       <form onSubmit={handleRegister} className="space-y-6">
-
         <div className="text-center">
           <h2 className="text-3xl font-bold text-white">Create Account</h2>
         </div>
@@ -87,21 +85,24 @@ export default function RegisterForm() {
         <div className="relative">
           <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <Input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="pl-10"
+            className="pl-10 pr-10"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </button>
         </div>
 
-        <Button loading={loading}>
-          Create Account
-        </Button>
+        <Button loading={loading}>Create Account</Button>
 
-        {error && (
-          <p className="text-red-400 text-sm text-center">{error}</p>
-        )}
+        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
         <div className="text-center text-sm text-gray-400">
           Already have an account?{" "}
@@ -109,7 +110,6 @@ export default function RegisterForm() {
             Login here
           </Link>
         </div>
-
       </form>
     </Card>
   );

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 
-import { FaGithub, FaLock, FaGoogle } from "react-icons/fa";
+import { FaGithub, FaLock, FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
 import Card from "@/components/ui/Card";
@@ -17,19 +17,16 @@ export default function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // show OTP form if 2FA is required
-  if (pendingTwoFactor) {
-    return <OTPForm />;
-  }
+  if (pendingTwoFactor) return <OTPForm />;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
       await login(email, password);
     } catch (err: unknown) {
@@ -61,12 +58,19 @@ export default function LoginForm() {
         <div className="relative">
           <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <Input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="pl-10"
+            className="pl-10 pr-10"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </button>
         </div>
 
         <div className="flex justify-end -mt-3">
@@ -77,9 +81,7 @@ export default function LoginForm() {
 
         <Button loading={loading} disabled={loading}>Login</Button>
 
-        {error && (
-          <p className="text-red-400 text-sm text-center">{error}</p>
-        )}
+        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
         <div className="text-center text-sm text-gray-400">
           Don't have an account?{" "}
@@ -97,7 +99,6 @@ export default function LoginForm() {
             <FaGoogle />
             Continue with Google
           </button>
-
           <button
             type="button"
             onClick={loginWithGithub}
