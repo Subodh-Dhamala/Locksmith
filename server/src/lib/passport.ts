@@ -21,13 +21,11 @@ import prisma from "./prisma";
 import logger from "./logger";
 import { TokenPayload } from "./jwt";
 
-if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET is missing");
-}
 
+//jwt 
 const jwtOptions: StrategyOptionsWithoutRequest = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: process.env.JWT_SECRET,
+  secretOrKey: process.env.JWT_SECRET!,
 };
 
 passport.use(
@@ -38,7 +36,6 @@ passport.use(
       });
 
       if (!user) return done(null, false);
-
       return done(null, user);
     } catch (error) {
       logger.error({ error }, "JWT strategy error");
@@ -47,6 +44,56 @@ passport.use(
   })
 );
 
+//shared oauth handler
+async function handleOAuthLogin(
+  provider: "google" | "github",
+  providerId: string,
+  email: string,
+  name: string
+) {
+  let user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    return prisma.user.create({
+      data: {
+        email,
+        name,
+        isVerified: true,
+        authProviders: {
+          create: {
+            provider,
+            providerId,
+          },
+        },
+      },
+    });
+  }
+
+  const exists = await prisma.authProvider.findUnique({
+    where: {
+      provider_providerId: {
+        provider,
+        providerId,
+      },
+    },
+  });
+
+  if (!exists) {
+    await prisma.authProvider.create({
+      data: {
+        provider,
+        providerId,
+        userId: user.id,
+      },
+    });
+  }
+
+  return user;
+}
+
+//google
 passport.use(
   new GoogleStrategy(
     {
@@ -54,57 +101,17 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       callbackURL: process.env.GOOGLE_CALLBACK_URL!,
     },
-    async (
-      _accessToken: string,
-      _refreshToken: string,
-      profile: GoogleProfile,
-      done: VerifyCallback
-    ) => {
+    async (_: string, __: string, profile: GoogleProfile, done: VerifyCallback) => {
       try {
         const email = profile.emails?.[0]?.value;
-
         if (!email) return done(new Error("No email from Google"), false);
 
-        const providerId = profile.id;
-
-        let user = await prisma.user.findUnique({
-          where: { email },
-        });
-
-        if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email,
-              name: profile.displayName,
-              isVerified: true,
-              authProviders: {
-                create: {
-                  provider: "google",
-                  providerId,
-                },
-              },
-            },
-          });
-        } else {
-          const exists = await prisma.authProvider.findUnique({
-            where: {
-              provider_providerId: {
-                provider: "google",
-                providerId,
-              },
-            },
-          });
-
-          if (!exists) {
-            await prisma.authProvider.create({
-              data: {
-                provider: "google",
-                providerId,
-                userId: user.id,
-              },
-            });
-          }
-        }
+        const user = await handleOAuthLogin(
+          "google",
+          profile.id,
+          email,
+          profile.displayName
+        );
 
         return done(null, user);
       } catch (error) {
@@ -115,6 +122,7 @@ passport.use(
   )
 );
 
+//github
 passport.use(
   new GitHubStrategy(
     {
@@ -123,57 +131,17 @@ passport.use(
       callbackURL: process.env.GITHUB_CALLBACK_URL!,
       scope: ["user:email"],
     },
-    async (
-      _accessToken: string,
-      _refreshToken: string,
-      profile: GitHubProfile,
-      done: VerifyCallback
-    ) => {
+    async (_: string, __: string, profile: GitHubProfile, done: VerifyCallback) => {
       try {
         const email = profile.emails?.[0]?.value;
-
         if (!email) return done(new Error("No email from GitHub"), false);
 
-        const providerId = profile.id.toString();
-
-        let user = await prisma.user.findUnique({
-          where: { email },
-        });
-
-        if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email,
-              name: profile.displayName ?? profile.username,
-              isVerified: true,
-              authProviders: {
-                create: {
-                  provider: "github",
-                  providerId,
-                },
-              },
-            },
-          });
-        } else {
-          const exists = await prisma.authProvider.findUnique({
-            where: {
-              provider_providerId: {
-                provider: "github",
-                providerId,
-              },
-            },
-          });
-
-          if (!exists) {
-            await prisma.authProvider.create({
-              data: {
-                provider: "github",
-                providerId,
-                userId: user.id,
-              },
-            });
-          }
-        }
+        const user = await handleOAuthLogin(
+          "github",
+          profile.id.toString(),
+          email,
+          profile.displayName ?? profile.username ?? "GitHub User"
+        );
 
         return done(null, user);
       } catch (error) {
