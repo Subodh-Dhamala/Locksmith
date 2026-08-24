@@ -1,4 +1,4 @@
-# Locksmith (PaleyDai)  - A Full Stack Authentication System. 
+# A Full Stack Authentication System. 
 
 A production-ready full-stack authentication system built with Next.js 14, Node.js, Express, TypeScript, Prisma, and PostgreSQL.
 
